@@ -16,7 +16,7 @@ export default function Home() {
 
           {/* Heading */}
           <div className="space-y-4 max-w-4xl">
-            <h1 className="p-2 text-5xl md:text-6xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+            <h1 className="px-2 py-4 text-5xl md:text-6xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
               AgriSave
             </h1>
             <p className="text-2xl md:text-3xl text-emerald-800 font-semibold">

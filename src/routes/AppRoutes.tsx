@@ -1,60 +1,92 @@
-import { Routes, Route, Navigate } from "react-router";
-import Home from "@/pages/Home";
-import Login from "@/pages/auth/Login";
-import Register from "@/pages/auth/Register";
-import Dashboard from "@/pages/dashboard/Dashboard";
-import Climate from "@/pages/dashboard/Climate";
-import Crops from "@/pages/dashboard/Crops";
-import Sustainability from "@/pages/dashboard/Sustainability";
-import NotFound from "@/pages/NotFound";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import GuestRoute from "@/components/GuestRoute";
+// src/routes/AppRoutes.tsx
+import { Routes, Route, Navigate } from 'react-router-dom';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import GuestRoute from '@/components/GuestRoute';
+import { AppLayout } from '@/components/layout';
+
+// Auth pages
+import Login from '@/pages/auth/Login';
+import Register from '@/pages/auth/Register';
+
+// Dashboard pages
+import Dashboard from '@/pages/dashboard/Dashboard';
+import Climate from '@/pages/dashboard/Climate';
+import Crops from '@/pages/dashboard/Crops';
+import Sustainability from '@/pages/dashboard/Sustainability';
+
+// Other pages
+import Home from '@/pages/Home';
+import NotFound from '@/pages/NotFound';
 
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={
-        <GuestRoute>
-          <Home />
-        </GuestRoute>
-      } 
-      />
-      <Route 
-        path="/login" 
+      {/* Public routes */}
+      <Route path="/" element={<Home />} />
+
+      {/* Guest routes (only accessible when not authenticated) */}
+      <Route
+        path="/login"
         element={
           <GuestRoute>
             <Login />
-            </GuestRoute>
-        } 
+          </GuestRoute>
+        }
       />
-      <Route 
-        path="/register" 
+      <Route
+        path="/register"
         element={
           <GuestRoute>
-              <Register />
+            <Register />
           </GuestRoute>
-        } 
+        }
       />
 
-      {/* Protected Routes */}
+      {/* Protected routes (require authentication) */}
       <Route
-        path="/dashboard/*"
+        path="/dashboard"
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <AppLayout>
+              <Dashboard />
+            </AppLayout>
           </ProtectedRoute>
         }
-      >
-        {/* Nested dashboard routes */}
-        <Route index element={<Navigate to="climate" replace />} />
-        <Route path="climate" element={<Climate />} />
-        <Route path="crops" element={<Crops />} />
-        <Route path="sustainability" element={<Sustainability />} />
-      </Route>
+      />
+      <Route
+        path="/weather"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Climate />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/crops"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Crops />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/greenpoints"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Sustainability />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
 
-      {/* Catch-all route */}
-      <Route path="*" element={<NotFound />} />
+      {/* Catch all - 404 */}
+      <Route path="/404" element={<NotFound />} />
+      <Route path="*" element={<Navigate to="/404" replace />} />
     </Routes>
   );
 }
