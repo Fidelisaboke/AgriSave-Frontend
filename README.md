@@ -76,8 +76,8 @@ The frontend offers a clean, interactive dashboard with seamless integration int
 ### Steps
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/agrisave-frontend.git
-cd agrisave-frontend
+git clone https://github.com/Fidelisaboke/AgriSave-Frontend.git
+cd Agrisave-Frontend
 
 # Copy environment file
 cp .env.example .env
