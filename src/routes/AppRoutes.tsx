@@ -14,14 +14,19 @@ export default function AppRoutes() {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/" element={<Home />} />
+      <Route path="/" element={
+        <GuestRoute>
+          <Home />
+        </GuestRoute>
+      } 
+      />
       <Route 
         path="/login" 
         element={
           <GuestRoute>
             <Login />
             </GuestRoute>
-          } 
+        } 
       />
       <Route 
         path="/register" 
