@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,55 +8,55 @@ interface DiseaseUploadCardProps {
   onFileSelect: (file: File) => void;
   isLoading?: boolean;
   disabled?: boolean;
+  selectedFile: File | null;
+  setSelectedFile: (file: File | null) => void;
+  preview: string | null;
+  setPreview: (preview: string | null) => void;
 }
 
-export function DiseaseUploadCard({ onFileSelect, isLoading, disabled }: DiseaseUploadCardProps) {
+export function DiseaseUploadCard({ 
+  onFileSelect, 
+  isLoading, 
+  disabled,
+  selectedFile, 
+  setSelectedFile, 
+  preview, 
+  setPreview 
+}: DiseaseUploadCardProps) {
   const [dragActive, setDragActive] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
-    }
+    setDragActive(e.type === 'dragenter' || e.type === 'dragover');
   }, []);
+
+  const handleFile = useCallback((file: File) => {
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file');
+      return;
+    }
+    setSelectedFile(file);
+
+  }, [setSelectedFile]);
+
+  // Handle cleanup
+  useEffect(() => {
+    // Revoke data URIs
+    return () => { if (preview) URL.revokeObjectURL(preview) };
+  })
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFile(e.dataTransfer.files[0]);
-    }
-  }, []);
+    if (e.dataTransfer.files?.[0]) handleFile(e.dataTransfer.files[0]);
+  }, [handleFile]);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
-    if (e.target.files && e.target.files[0]) {
-      handleFile(e.target.files[0]);
-    }
-  }, []);
-
-  const handleFile = (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file');
-      return;
-    }
-
-    setSelectedFile(file);
-    
-    // Create preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
+    if (e.target.files?.[0]) handleFile(e.target.files[0]);
+  }, [handleFile]);
 
   const handleAnalyze = () => {
     if (selectedFile) {
@@ -158,11 +158,7 @@ export function DiseaseUploadCard({ onFileSelect, isLoading, disabled }: Disease
                   </>
                 )}
               </Button>
-              <Button
-                variant="outline"
-                onClick={handleClear}
-                disabled={isLoading}
-              >
+              <Button variant="outline" onClick={handleClear} disabled={isLoading}>
                 Cancel
               </Button>
             </div>

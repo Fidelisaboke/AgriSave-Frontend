@@ -11,6 +11,8 @@ import { type DiseasePredictionResponse } from '@/types';
 
 export default function DiseaseDetection() {
   const [result, setResult] = useState<DiseasePredictionResponse | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
 
   const mutation = useMutation({
     mutationFn: predictDisease,
@@ -21,11 +23,19 @@ export default function DiseaseDetection() {
 
   const handleFileSelect = (file: File) => {
     setResult(null);
+    setSelectedFile(file);
+
+    const reader = new FileReader();
+    reader.onload = () => setPreview(reader.result as string);
+    reader.readAsDataURL(file);
+
     mutation.mutate(file);
   };
 
   const handleReset = () => {
     setResult(null);
+    setSelectedFile(null);
+    setPreview(null);
     mutation.reset();
   };
 
@@ -95,10 +105,15 @@ export default function DiseaseDetection() {
             <Leaf className="h-5 w-5 text-emerald-600" />
             Upload Leaf Image
           </h3>
+          
           <DiseaseUploadCard
             onFileSelect={handleFileSelect}
             isLoading={mutation.isPending}
             disabled={mutation.isPending}
+            preview={preview}
+            setPreview={setPreview}
+            selectedFile={selectedFile}
+            setSelectedFile={setSelectedFile}
           />
 
           {/* Tips Card */}

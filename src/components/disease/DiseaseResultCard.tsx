@@ -47,7 +47,7 @@ const severityConfig = {
 };
 
 export function DiseaseResultCard({ prediction }: DiseaseResultCardProps) {
-  const config = severityConfig[prediction.severity];
+  const config = severityConfig[prediction.severity] || severityConfig.None;
   const Icon = config.icon;
   const confidencePercent = Math.round(prediction.confidence * 100);
 
