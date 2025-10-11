@@ -11,7 +11,7 @@ interface SidebarProps {
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'Weather', href: '/weather', icon: Cloud },
-  { name: 'Crops', href: '/crops', icon: Sprout },
+  { name: 'Crop Recommendations', href: '/crops', icon: Sprout },
   { name: 'Crop Disease Detection', href: '/disease-detection', icon: Leaf },
   { name: 'GreenPoints', href: '/greenpoints', icon: Award },
 ];

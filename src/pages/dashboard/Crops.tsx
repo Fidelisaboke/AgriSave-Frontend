@@ -1,234 +1,211 @@
-import { Sprout, Leaf, AlertCircle, CheckCircle, TrendingUp } from 'lucide-react';
-import { DashboardCard } from '@/components/dashboard/DashboardCard';
-import { StatCard } from '@/components/dashboard/StatCard';
+import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { type CropRecommendationFormData } from '@/schemas/cropRecommendation';
+import { CropRecommendationForm } from '@/components/crops/CropRecommendationForm';
+import { CropCard } from '@/components/crops/CropCard';
+import { SustainabilityTips } from '@/components/crops/SustainabilityTips';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { 
+  ArrowDownAZ, 
+  ArrowUpAZ, 
+  Calendar, 
+  Info, 
+  Leaf, 
+  RefreshCw, 
+  Sprout,
+} from 'lucide-react';
+import { recommendCrops } from '@/api/models';
+import { type CropRecommendationResponse } from '@/types';
+
+type SortOption = 'confidence-desc' | 'confidence-asc' | 'name-asc' | 'name-desc';
 
 export default function Crops() {
+  const [recommendations, setRecommendations] = useState<CropRecommendationResponse | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>('confidence-desc');
+
+  type ErrorResponse = {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  const mutation = useMutation({
+    mutationFn: recommendCrops,
+    onSuccess: (data) => {
+      setRecommendations(data);
+      toast.success('Crop recommendations generated successfully!');
+    },
+    onError: (error: unknown) => {
+      console.error('Error fetching recommendations:', error);
+      const err = error as ErrorResponse;
+      if (
+        err &&
+        typeof err === 'object' &&
+        err.response &&
+        typeof err.response === 'object' &&
+        err.response.data
+      ) {
+        toast.error(err.response.data.message || 'Failed to get recommendations. Please try again.');
+      } else {
+        toast.error('Failed to get recommendations. Please try again.');
+      }
+    },
+  });
+
+  const handleSubmit = (data: CropRecommendationFormData) => {
+    mutation.mutate(data);
+  };
+
+  const handleReset = () => {
+    setRecommendations(null);
+    mutation.reset();
+  };
+
+  const getSortedRecommendations = () => {
+    if (!recommendations?.prediction?.recommendations) return [];
+    
+    const recs = [...recommendations.prediction.recommendations];
+    
+    switch (sortBy) {
+      case 'confidence-desc':
+        return recs.sort((a, b) => b.confidence - a.confidence);
+      case 'confidence-asc':
+        return recs.sort((a, b) => a.confidence - b.confidence);
+      case 'name-asc':
+        return recs.sort((a, b) => a.crop.localeCompare(b.crop));
+      case 'name-desc':
+        return recs.sort((a, b) => b.crop.localeCompare(a.crop));
+      default:
+        return recs;
+    }
+  };
+
+  const sortedRecommendations = getSortedRecommendations();
+
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Crop Management 🌾
-          </h2>
-          <p className="text-gray-600">
-            Monitor and manage your crops with AI-powered insights
-          </p>
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+          <Sprout className="h-8 w-8 text-green-600" />
+          Crop Recommendations
+        </h1>
+        <p className="text-muted-foreground mt-2">
+          Get AI-powered crop suggestions based on your soil and climate conditions
+        </p>
+      </div>
+
+      {/* Info Alert */}
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertTitle>How it works</AlertTitle>
+        <AlertDescription>
+          Our AI analyzes your soil nutrients (NPK), pH levels, and climate data to recommend the most
+          suitable crops for your farm. Higher suitability scores indicate better compatibility with your
+          conditions.
+        </AlertDescription>
+      </Alert>
+
+      {/* Form */}
+      <CropRecommendationForm onSubmit={handleSubmit} isLoading={mutation.isPending} />
+
+      {/* Results Section */}
+      {recommendations && (
+        <div className="space-y-6">
+          {/* Results Header with Controls */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Leaf className="h-5 w-5 text-green-600" />
+                    Your Crop Recommendations
+                  </CardTitle>
+                  <CardDescription className="flex items-center gap-2 mt-2">
+                    <Calendar className="h-4 w-4" />
+                    Generated on {new Date(recommendations.timestamp).toLocaleString()}
+                  </CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={handleReset}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  New Analysis
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">
+                    Found {sortedRecommendations.length} suitable crop{sortedRecommendations.length !== 1 ? 's' : ''}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Based on N: {recommendations.inputs.N}, P: {recommendations.inputs.P}, K:{' '}
+                    {recommendations.inputs.K}, pH: {recommendations.inputs.ph}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Sort by:</span>
+                  <div className="flex gap-1">
+                    <Button
+                      variant={sortBy === 'confidence-desc' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSortBy('confidence-desc')}
+                      className="gap-1"
+                    >
+                      <ArrowDownAZ className="h-4 w-4" />
+                      A-Z
+                    </Button>
+                    <Button
+                      variant={sortBy === 'name-desc' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSortBy('name-desc')}
+                      className="gap-1"
+                    >
+                      <ArrowUpAZ className="h-4 w-4" />
+                      Z-A
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Crop Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sortedRecommendations.map((rec, index) => (
+              <CropCard
+                key={rec.crop}
+                recommendation={rec}
+                rank={sortBy === 'confidence-desc' ? index + 1 : 0}
+              />
+            ))}
+          </div>
+
+          {/* Sustainability Tips */}
+          <SustainabilityTips />
         </div>
-        <Button className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700">
-          <Sprout className="h-4 w-4 mr-2" />
-          Add New Crop
-        </Button>
-      </div>
+      )}
 
-      {/* Crop Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Active Crops"
-          value="8"
-          icon={Sprout}
-          iconColor="text-emerald-600"
-          iconBgColor="bg-emerald-50"
-          suffix="types"
-        />
-        <StatCard
-          title="Healthy Crops"
-          value="6"
-          icon={CheckCircle}
-          iconColor="text-green-600"
-          iconBgColor="bg-green-50"
-          trend={{ value: 20, label: 'improvement' }}
-        />
-        <StatCard
-          title="Needs Attention"
-          value="2"
-          icon={AlertCircle}
-          iconColor="text-amber-600"
-          iconBgColor="bg-amber-50"
-        />
-        <StatCard
-          title="Expected Yield"
-          value="95"
-          suffix="%"
-          icon={TrendingUp}
-          iconColor="text-purple-600"
-          iconBgColor="bg-purple-50"
-          trend={{ value: 8, label: 'vs forecast' }}
-        />
-      </div>
-
-      {/* Crops Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Maize */}
-        <DashboardCard
-          title="Maize"
-          description="Planted 45 days ago"
-          icon={Sprout}
-          iconColor="text-yellow-600"
-        >
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 bg-green-500 rounded-full"></div>
-              <span className="text-sm font-medium text-green-700">Excellent Health</span>
+      {/* Empty State */}
+      {!recommendations && !mutation.isPending && (
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <div className="h-20 w-20 rounded-full bg-green-100 flex items-center justify-center mb-4">
+              <Sprout className="h-10 w-10 text-green-600" />
             </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Growth Stage</span>
-                <span className="font-medium text-gray-900">Vegetative</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Area</span>
-                <span className="font-medium text-gray-900">2.5 hectares</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Expected Harvest</span>
-                <span className="font-medium text-gray-900">60 days</span>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-emerald-100">
-              <p className="text-xs text-gray-600 mb-2">Growth Progress</p>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-gradient-to-r from-emerald-500 to-teal-600 h-2 rounded-full" style={{ width: '43%' }}></div>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">43% complete</p>
-            </div>
-
-            <Button variant="outline" className="w-full">
-              View Details
-            </Button>
-          </div>
-        </DashboardCard>
-
-        {/* Beans */}
-        <DashboardCard
-          title="Beans"
-          description="Planted 30 days ago"
-          icon={Leaf}
-          iconColor="text-green-600"
-        >
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 bg-yellow-500 rounded-full"></div>
-              <span className="text-sm font-medium text-yellow-700">Needs Attention</span>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Growth Stage</span>
-                <span className="font-medium text-gray-900">Flowering</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Area</span>
-                <span className="font-medium text-gray-900">1.8 hectares</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Expected Harvest</span>
-                <span className="font-medium text-gray-900">45 days</span>
-              </div>
-            </div>
-
-            <div className="p-3 bg-yellow-50 border-l-4 border-yellow-500 rounded">
-              <p className="text-xs font-medium text-yellow-900">Recommendation</p>
-              <p className="text-xs text-yellow-700 mt-1">Increase watering frequency. Low soil moisture detected.</p>
-            </div>
-
-            <Button variant="outline" className="w-full">
-              View Details
-            </Button>
-          </div>
-        </DashboardCard>
-
-        {/* Tomatoes */}
-        <DashboardCard
-          title="Tomatoes"
-          description="Planted 20 days ago"
-          icon={Sprout}
-          iconColor="text-red-600"
-        >
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 bg-green-500 rounded-full"></div>
-              <span className="text-sm font-medium text-green-700">Growing Well</span>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Growth Stage</span>
-                <span className="font-medium text-gray-900">Seedling</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Area</span>
-                <span className="font-medium text-gray-900">0.5 hectares</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Expected Harvest</span>
-                <span className="font-medium text-gray-900">85 days</span>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-emerald-100">
-              <p className="text-xs text-gray-600 mb-2">Growth Progress</p>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-gradient-to-r from-emerald-500 to-teal-600 h-2 rounded-full" style={{ width: '19%' }}></div>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">19% complete</p>
-            </div>
-
-            <Button variant="outline" className="w-full">
-              View Details
-            </Button>
-          </div>
-        </DashboardCard>
-      </div>
-
-      {/* AI Recommendations */}
-      <DashboardCard
-        title="AI-Powered Recommendations"
-        description="Personalized insights for your crops"
-        icon={Leaf}
-        iconColor="text-emerald-600"
-      >
-        <div className="space-y-3">
-          <div className="p-4 bg-emerald-50 border-l-4 border-emerald-500 rounded-lg">
-            <div className="flex items-start gap-3">
-              <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5" />
-              <div>
-                <p className="font-semibold text-gray-900">Optimal Planting Window</p>
-                <p className="text-sm text-gray-600 mt-1">
-                  Current conditions are ideal for planting sorghum and millet. Consider diversifying your crop portfolio.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
-            <div className="flex items-start gap-3">
-              <Sprout className="h-5 w-5 text-blue-600 mt-0.5" />
-              <div>
-                <p className="font-semibold text-gray-900">Intercropping Suggestion</p>
-                <p className="text-sm text-gray-600 mt-1">
-                  Planting beans between maize rows can improve nitrogen fixation and increase overall yield by 15%.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4 bg-purple-50 border-l-4 border-purple-500 rounded-lg">
-            <div className="flex items-start gap-3">
-              <TrendingUp className="h-5 w-5 text-purple-600 mt-0.5" />
-              <div>
-                <p className="font-semibold text-gray-900">Market Demand Forecast</p>
-                <p className="text-sm text-gray-600 mt-1">
-                  Tomato prices expected to increase by 25% next quarter. Consider expanding production.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </DashboardCard>
+            <h3 className="text-lg font-semibold mb-2">Ready to Find Your Perfect Crops?</h3>
+            <p className="text-muted-foreground text-center max-w-md">
+              Fill in the form above with your soil and climate data to receive personalized crop
+              recommendations powered by AI.
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
-}
+};
