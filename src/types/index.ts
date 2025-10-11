@@ -51,3 +51,34 @@ export interface DiseasePredictionResponse {
   prediction: DiseasePrediction;
   timestamp: string;
 }
+
+export interface CropRecommendationInput {
+  N: number;
+  P: number;
+  K: number;
+  temperature: number;
+  humidity: number;
+  ph: number;
+  rainfall: number;
+}
+
+export interface CropRecommendation {
+  crop: string;
+  confidence: number;
+}
+
+export interface CropRecommendationResponse {
+  inputs: {
+    N: number;
+    P: number;
+    K: number;
+    temperature: number;
+    humidity: number;
+    ph: number;
+    rainfall: number;
+  };
+  prediction: {
+    recommendations: CropRecommendation[];
+  };
+  timestamp: string;
+}
