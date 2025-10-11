@@ -17,6 +17,7 @@ import Sustainability from '@/pages/dashboard/Sustainability';
 // Other pages
 import Home from '@/pages/Home';
 import NotFound from '@/pages/NotFound';
+import DiseaseDetection from '@/pages/dashboard/DiseaseDetection';
 
 export default function AppRoutes() {
   return (
@@ -69,6 +70,16 @@ export default function AppRoutes() {
           <ProtectedRoute>
             <AppLayout>
               <Crops />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/disease-detection"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <DiseaseDetection />
             </AppLayout>
           </ProtectedRoute>
         }
