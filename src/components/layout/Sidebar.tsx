@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router';
-import { Home, Cloud, Sprout, Award, LogOut, X } from 'lucide-react';
+import { Home, Cloud, Sprout, Award, LogOut, X, Leaf } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -12,6 +12,7 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'Weather', href: '/weather', icon: Cloud },
   { name: 'Crops', href: '/crops', icon: Sprout },
+  { name: 'Crop Disease Detection', href: '/disease-detection', icon: Leaf },
   { name: 'GreenPoints', href: '/greenpoints', icon: Award },
 ];
 

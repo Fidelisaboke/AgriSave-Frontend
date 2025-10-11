@@ -39,3 +39,15 @@ export interface ApiError {
   message: string;
   errors?: Record<string, string[]>;
 }
+
+export interface DiseasePrediction {
+  predicted_class: string;
+  confidence: number;
+  severity: 'Low' | 'Medium' | 'High' | 'Critical';
+  recommended_actions?: string[];
+}
+
+export interface DiseasePredictionResponse {
+  prediction: DiseasePrediction;
+  timestamp: string;
+}
